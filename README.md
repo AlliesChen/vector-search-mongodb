@@ -1,5 +1,7 @@
 # Mongo DB Vector Search Demo
 
+> `openai.Embedding.create` has been changed to `openai.embedding.create`, see [the document](https://cookbook.openai.com/examples/using_embeddings)
+
 ## Initialization
 
 Prerequisites:
@@ -16,7 +18,7 @@ Create Environment Variants:
 
 ```bash
 poetry install
-poetry run python vector_search_mongodb/__init__.py
+poetry run python vector_search_mongodb/__init__.py --query "your imagination"
 ```
 
 ## FAQ
