@@ -36,7 +36,7 @@ def generate_embedding(url: str, token: str, text: str) -> list[float]:
     return response.json()
 
 
-def main(db_url: str, embedding_url: str, huggingface_token: str):
+def main(query: str, db_url: str, embedding_url: str, huggingface_token: str):
     client = connect_to_mongo(db_url)
     if client is None:
         print("Failed to connect to MongoDB. Exiting...")
@@ -47,11 +47,17 @@ def main(db_url: str, embedding_url: str, huggingface_token: str):
     movies = db.movies
 
     try:
-        generate_embedding(embedding_url, huggingface_token, "I love MongoDB!")
-        # for movie in movies.find({"plot": {"$exists": True}}).limit(50):
-        #     movie["plot_embedding_hf"] = generate_embedding(
-        #         embedding_url, huggingface_token, movie["plot"])
-        #     movies.replace_one({"_id": movie["_id"]}, movie)
+        results = movies.aggregate([
+            {"$vectorSearch": {
+                "queryVector": generate_embedding(text=query, url=embedding_url, token=huggingface_token),
+                "path": "plot_embedding_hf",
+                "numCandidates": 100,
+                "limit": 4,
+                "index": "PlotSemanticSearch",
+            }}
+        ])
+        for movie in results:
+            print(f"Movie Name: {movie["title"]},\nMovie Plot: {movie['plot']}\n")
     except Exception as e:
         print(f"Error while accessing the movies collection: {e}")
     finally:
@@ -61,7 +67,8 @@ def main(db_url: str, embedding_url: str, huggingface_token: str):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description='MongoDB URL, Embedding URL and Huggingface token')
+        description='Your query,MongoDB URL, Embedding URL and Huggingface token')
+    parser.add_argument('--query', type=str, help='Your query')
     parser.add_argument('--url', type=str, help='MongoDB URL',
                         default=os.getenv("MONGODB_URL"))
     parser.add_argument('--embedding-url', type=str, help='Embedding URL',
@@ -70,4 +77,4 @@ if __name__ == "__main__":
                         default=os.getenv("HUGGINGFACE_TOKEN"))
     args = parser.parse_args()
 
-    main(args.url, args.embedding_url, args.huggingface_token)
+    main(query=args.query, db_url=args.url, embedding_url=args.embedding_url, huggingface_token=args.huggingface_token)
