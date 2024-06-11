@@ -8,6 +8,12 @@ Prerequisites:
 
 - [poetry](https://python-poetry.org/)
 
+Create Environment Variants:
+
+- MONGODB_URL
+- HUGGINGFACE_TOKEN
+- EMBEDDING_URL=https://api-inference.huggingface.co/pipeline/feature-extraction/sentence-transformers/all-MiniLM-L6-v2
+
 ```bash
 poetry install
 poetry run python vector_search_mongodb/__init__.py
