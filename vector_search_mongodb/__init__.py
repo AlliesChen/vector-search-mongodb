@@ -4,9 +4,11 @@ import argparse
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from dotenv import load_dotenv
-import openai
 
 load_dotenv()
+
+MONGODB_URL = os.getenv("MONGODB_URL")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 
 def connect_to_mongo(url: str) -> MongoClient | None:
@@ -22,16 +24,8 @@ def connect_to_mongo(url: str) -> MongoClient | None:
         return None
 
 
-def generate_embedding(text: str, api_key: str) -> list[float]:
-    openai.api_key = api_key
-    response = openai.embeddings.create(
-        model="text-embedding-ada-002",
-        input=[text],
-    )
-    return response.data[0].embedding
-
-def main(query: str, db_url: str, openai_api_key: str):
-    client = connect_to_mongo(db_url)
+def main(query: str):
+    client = connect_to_mongo(MONGODB_URL)
     if client is None:
         print("Failed to connect to MongoDB. Exiting...")
         sys.exit(1)
@@ -41,21 +35,22 @@ def main(query: str, db_url: str, openai_api_key: str):
     movies = db.embedded_movies
 
     try:
-        embedding = generate_embedding(text=query, api_key=openai_api_key)
+        embedding = generate_embedding(text=query, api_key=OPENAI_API_KEY)
 
         results = movies.aggregate([
-        {
-            "$vectorSearch": {
-                "index": "PlotSemanticSearch",
-                "path": "plot_embedding",
-                "queryVector": embedding,
-                "numCandidates": 100,
-                "limit": 4
-            }
-        }])
-        
+            {
+                "$vectorSearch": {
+                    "index": "PlotSemanticSearch",
+                    "path": "plot_embedding",
+                    "queryVector": embedding,
+                    "numCandidates": 100,
+                    "limit": 4
+                }
+            }])
+
         for movie in results:
-            print(f"Movie Name: {movie["title"]},\nMovie Plot: {movie['plot']}\n")
+            print(f"Movie Name: {movie["title"]
+                                 },\nMovie Plot: {movie['plot']}\n")
     except Exception as e:
         print(f"Error while accessing the movies collection: {e}")
     finally:
@@ -65,16 +60,8 @@ def main(query: str, db_url: str, openai_api_key: str):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description='Your query,MongoDB URL, Embedding URL and Huggingface token')
+        description='Your query string')
     parser.add_argument('--query', type=str, help='Your query')
-    parser.add_argument('--url', type=str, help='MongoDB URL',
-                        default=os.getenv("MONGODB_URL"))
-    parser.add_argument('--openai-api-key', type=str, help='openai api key',
-                        default=os.getenv("OPENAI_API_KEY"))
     args = parser.parse_args()
 
-    main(
-        query=args.query,
-        db_url=args.url,
-        openai_api_key=args.openai_api_key
-        )
+    main(query=args.query,)
