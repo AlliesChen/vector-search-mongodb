@@ -81,3 +81,4 @@ poetry run python vector_search_mongodb/__init__.py --query "your imagination"
 - [Connect to mongodb when you have Google login as credentials for Mongodb Atlas](https://stackoverflow.com/a/77422391/18972098)
 - [SSL Handshake issue with Pymongo on Python3 on Windows](https://stackoverflow.com/a/77084663/18972098)
 
+feature-extraction/sentence-transformers/all-MiniLM-L6-v2
